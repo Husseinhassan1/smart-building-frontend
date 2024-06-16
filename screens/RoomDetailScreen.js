@@ -1,25 +1,24 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Modal } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator, SectionList } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchRoomByName } from '~/store/slices/roomSlice';
+import { fetchRules } from '~/store/slices/ruleSlice';
 import { fetchAppliances } from '~/store/slices/applianceSlice';
+import { Card, Title, Button, Divider, IconButton } from 'react-native-paper';
 import { colors, spacing } from '~/styles/global';
-import ApplianceForm from '~/components/ApplianceForm';
-import FusionList from '~/components/FusionList';
-import ActuatorList from '~/components/ActuatorList';
-import ApplianceList from '~/components/ApplianceList';
+import { ActuatorList, ApplianceList, FusionList } from 'components';
 
 const RoomDetailScreen = ({ route, navigation }) => {
     const { roomName } = route.params;
     const dispatch = useDispatch();
     const { selectedRoom, loading, error } = useSelector((state) => state.rooms);
     const { appliances } = useSelector((state) => state.appliances);
-
-    const [modalVisible, setModalVisible] = useState(false);
+    const { rules } = useSelector((state) => state.rules);
 
     useEffect(() => {
         dispatch(fetchRoomByName(roomName));
         dispatch(fetchAppliances());
+        dispatch(fetchRules());
     }, [dispatch, roomName]);
 
     if (loading) {
@@ -46,46 +45,112 @@ const RoomDetailScreen = ({ route, navigation }) => {
         );
     }
 
-    const roomAppliances = appliances.filter((appliance) => appliance.room === roomName);
+    const roomAppliances = appliances.filter((appliance) => appliance.actuatorOutput.actuator.room === roomName);
+    const roomRules = rules.filter((rule) => rule.room.name === roomName);
+
+    const renderSection = (title, data, renderItem, noDataText) => (
+        <View>
+            <Text style={styles.subtitle}>{title}</Text>
+            {data.length > 0 ? (
+                <SectionList
+                    sections={[{ title, data }]}
+                    keyExtractor={(item, index) => item.dbId || index.toString()}
+                    renderItem={renderItem}
+                    renderSectionHeader={({ section: { title } }) => (
+                        <View style={styles.sectionHeader}>
+                            <Text style={styles.subtitle}>{title}</Text>
+                        </View>
+                    )}
+                />
+            ) : (
+                <Text style={styles.noDataText}>{noDataText}</Text>
+            )}
+        </View>
+    );
+
+    const currentStateCards = Object.keys(selectedRoom.currentState).map((key, index) => (
+        <Card key={index} style={styles.card}>
+            <Card.Content>
+                <IconButton icon="information" color={colors.primary} size={30} />
+                <Title>{key.charAt(0).toUpperCase() + key.slice(1)}</Title>
+                <Text>{selectedRoom.currentState[key]}</Text>
+            </Card.Content>
+        </Card>
+    ));
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>{selectedRoom.name}</Text>
-            <Text style={styles.subtitle}>Fusions</Text>
-            <FusionList fusions={selectedRoom.fusions} />
-            <Text style={styles.subtitle}>Actuators</Text>
-            <ActuatorList actuators={selectedRoom.actuators} />
-            <Text style={styles.subtitle}>Appliances</Text>
-            <ApplianceList appliances={roomAppliances} />
-            {selectedRoom.actuators.length > 0 && (
-                <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.button}>
-                    <Text style={styles.buttonText}>Add Appliance</Text>
-                </TouchableOpacity>
-            )}
-
-            <Modal
-                animationType="slide"
-                transparent={true}
-                visible={modalVisible}
-                onRequestClose={() => setModalVisible(false)}
-            >
-                <View style={styles.modalContainer}>
-                    <View style={styles.modalView}>
-                        <ApplianceForm
-                            roomName={selectedRoom.name}
-                            actuators={selectedRoom.actuators}
-                            onClose={() => setModalVisible(false)}
-                        />
-                    </View>
+        <SectionList
+            sections={[
+                { title: 'Current State', data: currentStateCards },
+                { title: 'Fusions', data: selectedRoom.fusions },
+                { title: 'Actuators', data: selectedRoom.actuators },
+                { title: 'Appliances', data: roomAppliances },
+                { title: 'Rules', data: roomRules },
+            ]}
+            keyExtractor={(item, index) => item.dbId || index.toString()}
+            renderItem={({ item, section }) => {
+                if (section.title === 'Current State') {
+                    return item;
+                } else if (section.title === 'Fusions') {
+                    return <FusionList fusions={[item]} />;
+                } else if (section.title === 'Actuators') {
+                    return <ActuatorList actuators={[item]} />;
+                } else if (section.title === 'Appliances') {
+                    return <ApplianceList appliances={[item]} />;
+                } else if (section.title === 'Rules') {
+                    return (
+                        <View style={styles.ruleContainer}>
+                            <Text style={styles.ruleText}>Logical String: {item.logicalString}</Text>
+                            <Text style={styles.ruleText}>Action: {item.action}</Text>
+                            <Text style={styles.ruleText}>Triggers:</Text>
+                            {item.triggers.map((trigger, index) => (
+                                <Text key={index} style={styles.ruleText}>- {trigger.physicalProperty} {trigger.operator} {trigger.value}</Text>
+                            ))}
+                            <Text style={styles.ruleText}>Outputs:</Text>
+                            {item.outputs.map((output, index) => (
+                                <Text key={index} style={styles.ruleText}>- Actuator ID: {output.actuator.id}, Output Number: {output.outputNumber}</Text>
+                            ))}
+                        </View>
+                    );
+                }
+                return null;
+            }}
+            renderSectionHeader={({ section: { title } }) => (
+                <View style={styles.sectionHeader}>
+                    <Text style={styles.subtitle}>{title}</Text>
                 </View>
-            </Modal>
-        </View>
+            )}
+            ListFooterComponent={() => (
+                <View>
+                    <Divider style={styles.divider} />
+                    {selectedRoom.actuators.length > 0 && (
+                        <>
+                            <Button
+                                mode="contained"
+                                onPress={() => navigation.navigate('AddRule', { roomName: selectedRoom.name, actuators: selectedRoom.actuators })}
+                                style={styles.button}
+                            >
+                                Add Rule
+                            </Button>
+                            <Button
+                                mode="contained"
+                                onPress={() => navigation.navigate('AddAppliance', { roomName: selectedRoom.name, actuators: selectedRoom.actuators })}
+                                style={styles.button}
+                            >
+                                Add Appliance
+                            </Button>
+                        </>
+                    )}
+                </View>
+            )}
+            contentContainerStyle={styles.container}
+        />
     );
 };
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
+        flexGrow: 1,
         padding: spacing.medium,
         backgroundColor: colors.light,
     },
@@ -102,6 +167,9 @@ const styles = StyleSheet.create({
     errorText: {
         color: colors.danger,
     },
+    sectionHeader: {
+        marginTop: spacing.large,
+    },
     title: {
         fontSize: 24,
         fontWeight: 'bold',
@@ -115,28 +183,27 @@ const styles = StyleSheet.create({
         color: colors.secondary,
     },
     button: {
-        backgroundColor: colors.primary,
+        marginVertical: spacing.small,
+    },
+    ruleContainer: {
         padding: spacing.medium,
-        alignItems: 'center',
-        borderRadius: 5,
-        marginTop: spacing.large,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.secondary,
     },
-    buttonText: {
-        color: colors.light,
-        fontWeight: 'bold',
+    ruleText: {
+        fontSize: 16,
+        color: colors.dark,
     },
-    modalContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    noDataText: {
+        textAlign: 'center',
+        marginVertical: spacing.medium,
+        color: colors.secondary,
     },
-    modalView: {
-        width: '80%',
-        backgroundColor: 'white',
-        borderRadius: 10,
-        padding: 20,
-        alignItems: 'center',
+    divider: {
+        marginVertical: spacing.medium,
+    },
+    card: {
+        marginBottom: spacing.medium,
     },
 });
 

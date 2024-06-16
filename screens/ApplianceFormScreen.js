@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
+import { View, StyleSheet, ScrollView } from 'react-native';
 import { useDispatch } from 'react-redux';
 import { createAppliance } from '~/store/slices/applianceSlice';
+import { Button, TextInput, Title } from 'react-native-paper';
+import { Picker } from '@react-native-picker/picker';
 import { colors, spacing } from '~/styles/global';
 
-const ApplianceForm = ({ roomName, actuators, onClose }) => {
+const ApplianceFormScreen = ({ route, navigation }) => {
+    const { roomName, actuators } = route.params;
     const dispatch = useDispatch();
     const [applianceName, setApplianceName] = useState('');
     const [applianceType, setApplianceType] = useState('');
-    const [selectedActuator, setSelectedActuator] = useState(actuators.length > 0 ? actuators[0].id : '');
+    const [selectedActuator, setSelectedActuator] = useState('');
     const [outputNumber, setOutputNumber] = useState('');
 
     const handleAddAppliance = () => {
@@ -24,64 +26,74 @@ const ApplianceForm = ({ roomName, actuators, onClose }) => {
                 outputNumber: parseInt(outputNumber, 10),
             },
         }));
-        onClose();
+        navigation.goBack();
     };
 
+    const availableOutputs = selectedActuator
+        ? actuators.find(a => a.id === selectedActuator)?.outputs || 0
+        : 0;
+
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Add Appliance</Text>
+        <ScrollView contentContainerStyle={styles.container}>
+            <Title>Add Appliance</Title>
             <TextInput
-                placeholder="Appliance Name"
+                label="Appliance Name"
                 value={applianceName}
                 onChangeText={setApplianceName}
                 style={styles.input}
             />
             <TextInput
-                placeholder="Appliance Type"
+                label="Appliance Type"
                 value={applianceType}
                 onChangeText={setApplianceType}
                 style={styles.input}
             />
             <Picker
                 selectedValue={selectedActuator}
-                onValueChange={(itemValue) => setSelectedActuator(itemValue)}
+                onValueChange={(value) => {
+                    setSelectedActuator(value);
+                    setOutputNumber(''); // Reset output number when actuator changes
+                }}
                 style={styles.input}
             >
+                <Picker.Item label="Select Actuator" value="" />
                 {actuators.map((actuator) => (
                     <Picker.Item key={actuator.id} label={actuator.id} value={actuator.id} />
                 ))}
             </Picker>
             <Picker
                 selectedValue={outputNumber}
-                onValueChange={(itemValue) => setOutputNumber(itemValue)}
+                onValueChange={(value) => setOutputNumber(value)}
                 style={styles.input}
+                enabled={availableOutputs > 0} // Disable if no outputs available
             >
                 <Picker.Item label="Select Output Number" value="" />
-                {[...Array(actuators.find(act => act.id === selectedActuator)?.outputs || 0).keys()].map(num => (
+                {[...Array(availableOutputs).keys()].map(num => (
                     <Picker.Item key={num + 1} label={`${num + 1}`} value={`${num + 1}`} />
                 ))}
             </Picker>
-            <Button title="Add" onPress={handleAddAppliance} />
-            <Button title="Cancel" color={colors.danger} onPress={onClose} />
-        </View>
+            <Button mode="contained" onPress={handleAddAppliance} style={styles.button}>Add Appliance</Button>
+            <Button mode="outlined" onPress={() => navigation.goBack()} style={[styles.button, styles.cancelButton]}>Cancel</Button>
+        </ScrollView>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
+        flexGrow: 1,
         padding: spacing.medium,
-    },
-    title: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        marginBottom: spacing.large,
+        backgroundColor: colors.light,
     },
     input: {
-        borderBottomWidth: 1,
-        borderBottomColor: colors.dark,
         marginBottom: spacing.medium,
-        padding: spacing.small,
+    },
+    button: {
+        marginVertical: spacing.small,
+    },
+    cancelButton: {
+        borderColor: colors.danger,
+        borderWidth: 1,
     },
 });
 
-export default ApplianceForm;
+export default ApplianceFormScreen;

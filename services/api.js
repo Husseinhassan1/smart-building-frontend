@@ -1,10 +1,10 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_BASE_URL = 'http://192.168.0.17:3000';
+export const API_BASE_URL = 'http://192.168.0.17';
 
 const api = axios.create({
-    baseURL: API_BASE_URL,
+    baseURL: `${API_BASE_URL}:3000`,
 });
 
 api.interceptors.request.use(async (config) => {
@@ -20,7 +20,13 @@ export const authenticateUser = (credentials) => api.post('/users/auth-with-pass
 export const fetchRooms = () => api.get('/rooms');
 export const fetchRoomByName = (name) => api.get(`/rooms/${name}`);
 export const createRule = (rule) => api.post('/rules', rule);
+export const fetchRules = () => api.get('/rules');
 export const fetchAppliances = () => api.get('/appliances');
 export const createAppliance = (applianceData) => api.post('/appliances', applianceData);
+export const updateRoomImage = (roomName, formData) => api.patch(`/rooms/${roomName}`, formData, {
+    headers: {
+        'Content-Type': 'multipart/form-data'
+    }
+});
 
 export default api;
