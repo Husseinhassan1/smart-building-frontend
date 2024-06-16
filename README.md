@@ -37,7 +37,7 @@ This repository contains the frontend for a Smart Building Application developed
 
    ```javascript
    // src/services/api.js
-   const API_BASE_URL = "http://192.168.0.17:3000"; // Replace with your backend URL
+   const API_BASE_URL = "192.168.0.17:3000"; // Replace with your backend URL
    ```
 
 ## Running the Application
