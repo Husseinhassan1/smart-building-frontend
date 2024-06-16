@@ -1,10 +1,10 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export const API_BASE_URL = 'http://192.168.0.17';
+export const API_BASE_URL = 'cloud.halid.ba';
 
 const api = axios.create({
-    baseURL: `${API_BASE_URL}:3000`,
+    baseURL: `http://${API_BASE_URL}`,
 });
 
 api.interceptors.request.use(async (config) => {
