@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export const API_BASE_URL = 'cloud.halid.ba';
 
 const api = axios.create({
-    baseURL: `http://${API_BASE_URL}`,
+    baseURL: `https://${API_BASE_URL}`,
 });
 
 api.interceptors.request.use(async (config) => {
@@ -28,5 +28,6 @@ export const updateRoomImage = (roomName, formData) => api.patch(`/rooms/${roomN
         'Content-Type': 'multipart/form-data'
     }
 });
+export const publishMQTTMessage = (topic, message) => api.post('/mqtt/publish', { topic, message });
 
 export default api;

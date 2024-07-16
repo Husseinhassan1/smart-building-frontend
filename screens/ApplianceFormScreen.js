@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { createAppliance } from '~/store/slices/applianceSlice';
 import { Button, TextInput, Title } from 'react-native-paper';
 import { Picker } from '@react-native-picker/picker';
@@ -8,6 +8,7 @@ import { colors, spacing } from '~/styles/global';
 
 const ApplianceFormScreen = ({ route, navigation }) => {
     const { roomName, actuators } = route.params;
+    const appliances = useSelector((state) => state.appliances.appliances);
     const dispatch = useDispatch();
     const [applianceName, setApplianceName] = useState('');
     const [applianceType, setApplianceType] = useState('');
@@ -32,6 +33,16 @@ const ApplianceFormScreen = ({ route, navigation }) => {
     const availableOutputs = selectedActuator
         ? actuators.find(a => a.id === selectedActuator)?.outputs || 0
         : 0;
+
+    const usedOutputs = selectedActuator
+        ? appliances
+            .filter(appliance => appliance.actuatorOutput.actuator.id === selectedActuator)
+            .map(appliance => appliance.actuatorOutput.outputNumber)
+        : [];
+
+    const outputOptions = [...Array(availableOutputs).keys()]
+        .map(num => num + 1)
+        .filter(output => !usedOutputs.includes(output));
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
@@ -65,11 +76,11 @@ const ApplianceFormScreen = ({ route, navigation }) => {
                 selectedValue={outputNumber}
                 onValueChange={(value) => setOutputNumber(value)}
                 style={styles.input}
-                enabled={availableOutputs > 0} // Disable if no outputs available
+                enabled={outputOptions.length > 0} // Disable if no outputs available
             >
                 <Picker.Item label="Select Output Number" value="" />
-                {[...Array(availableOutputs).keys()].map(num => (
-                    <Picker.Item key={num + 1} label={`${num + 1}`} value={`${num + 1}`} />
+                {outputOptions.map(output => (
+                    <Picker.Item key={output} label={`${output}`} value={`${output}`} />
                 ))}
             </Picker>
             <Button mode="contained" onPress={handleAddAppliance} style={styles.button}>Add Appliance</Button>

@@ -1,36 +1,47 @@
 import React from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { Card } from 'react-native-paper';
 import { colors, spacing } from '~/styles/global';
 
 const ActuatorList = ({ actuators }) => {
     if (actuators.length === 0) {
-        return <Text>No actuators available</Text>;
+        return <Text style={styles.noDataText}>No actuators available</Text>;
     }
 
     return (
-        <FlatList
-            data={actuators}
-            keyExtractor={(item) => item.dbId}
-            renderItem={({ item }) => (
-                <View style={styles.device}>
-                    <Text style={styles.deviceText}>ID: {item.id}</Text>
-                    <Text style={styles.deviceText}>Type: {item.type}</Text>
-                    <Text style={styles.deviceText}>Last Ping: {item.lastPing}</Text>
-                </View>
-            )}
-        />
+        <View style={styles.container}>
+            {actuators.map((actuator) => (
+                <Card key={actuator.dbId} style={styles.card}>
+                    <Card.Content>
+                        <Text style={styles.deviceText}>ID: {actuator.id}</Text>
+                        <Text style={styles.deviceText}>Type: {actuator.type}</Text>
+                        <Text style={styles.deviceText}>Last Ping: {actuator.lastPing}</Text>
+                        <Text style={styles.deviceText}>Room: {actuator.room}</Text>
+                        <Text style={styles.deviceText}>Device Topic: {actuator.deviceTopic}</Text>
+                    </Card.Content>
+                </Card>
+            ))}
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
-    device: {
+    container: {
+        flexGrow: 1,
         padding: spacing.medium,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.secondary,
+        backgroundColor: colors.light,
+    },
+    card: {
+        marginBottom: spacing.medium,
     },
     deviceText: {
         fontSize: 16,
         color: colors.dark,
+    },
+    noDataText: {
+        textAlign: 'center',
+        marginVertical: spacing.medium,
+        color: colors.secondary,
     },
 });
 

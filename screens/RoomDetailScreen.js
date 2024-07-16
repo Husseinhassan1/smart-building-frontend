@@ -68,15 +68,24 @@ const RoomDetailScreen = ({ route, navigation }) => {
         </View>
     );
 
-    const currentStateCards = Object.keys(selectedRoom.currentState).map((key, index) => (
-        <Card key={index} style={styles.card}>
-            <Card.Content>
-                <IconButton icon="information" color={colors.primary} size={30} />
-                <Title>{key.charAt(0).toUpperCase() + key.slice(1)}</Title>
-                <Text>{selectedRoom.currentState[key]}</Text>
-            </Card.Content>
-        </Card>
-    ));
+    const currentStateCards = Object.keys(selectedRoom.currentState).map((key, index) => {
+        const value = selectedRoom.currentState[key];
+
+        // Ensure value is coerced to a string explicitly if it's not falsy
+        const displayValue = value !== null && value !== undefined ? String(value) : '';
+
+        return (
+            displayValue.length > 0 && // Compare the length of displayValue instead of checking if it's not an empty string
+            <Card key={index} style={styles.card}>
+                <Card.Content style={styles.cardContent}>
+                    <IconButton icon="information" color={colors.primary} size={30} />
+                    <Title>{key.charAt(0).toUpperCase() + key.slice(1)}</Title>
+                    <Text style={styles.value}>: {displayValue}</Text>
+                </Card.Content>
+            </Card>
+        );
+    });
+
 
     return (
         <SectionList
@@ -204,6 +213,16 @@ const styles = StyleSheet.create({
     },
     card: {
         marginBottom: spacing.medium,
+        backgroundColor: colors.light,
+    },
+    cardContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    value: {
+        fontSize: 25,
+        fontWeight: 'bold',
+        color: colors.dark,
     },
 });
 

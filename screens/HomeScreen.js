@@ -47,7 +47,7 @@ const HomeScreen = ({ navigation }) => {
 
         return (
             <Card style={styles.card}>
-                <Card.Cover source={{ uri: `http://images.${API_BASE_URL}${item.image}` || 'https://via.placeholder.com/150' }} />
+                <Card.Cover source={{ uri: `https://images.${API_BASE_URL}${item.image}` || 'https://via.placeholder.com/150' }} />
                 <Card.Content>
                     <Title>{item.name}</Title>
                     <Paragraph>{roomAppliances.length} appliances connected</Paragraph>
